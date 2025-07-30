@@ -9,6 +9,7 @@ const recipeRepository = AppDataSource.getRepository(Recipe);
 const relations: FindOptionsRelations<Recipe> = {
   ingredients: {
     ingredient: true,
+    recipe: true,
   },
   chef: true,
 };

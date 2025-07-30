@@ -1,5 +1,5 @@
 import { Chef } from "../../types/chef.type";
-import { UuidReq } from "../generic/uuidReq.https-types";
+import { UuidReq } from "../generic/uuidReq.api";
 
 export type GetChefbyUuidReq = UuidReq;
 

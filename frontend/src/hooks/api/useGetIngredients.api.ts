@@ -1,4 +1,4 @@
-import { type GetAllIngredientsRes } from "../../../../shared/http-types/ingredient/getAllIngredients.http-type";
+import { type GetAllIngredientsRes } from "../../../../shared/api/ingredient/getAllIngredients.api";
 import { useQuery } from "@tanstack/react-query";
 import api from "../../api";
 

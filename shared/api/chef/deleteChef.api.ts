@@ -1,4 +1,4 @@
-import type { UuidReq } from "../generic/uuidReq.https-types";
+import type { UuidReq } from "../generic/uuidReq.api";
 
 export type DeleteChefReq = UuidReq;
 

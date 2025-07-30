@@ -1,4 +1,4 @@
-import { type FC } from "react";
+import { useMemo, type FC } from "react";
 import { type RecipeDetails } from "../../../../shared/types/recipe.type";
 import { type Chef as ChefModel } from "../../../../shared/types/chef.type";
 import { type Ingredient as IngredientModel } from "../../../../shared/types/ingredient.type";
@@ -17,26 +17,18 @@ import {
 import Styles from "./recipe.style";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import RecipeStepsList from "./recipeSteps/RecipeStepsList";
-import type { DraftRecipeIngredient } from "./recipeIngredientTable/draftRecipeIngredient.type";
-import { Controller, useForm, type SubmitHandler } from "react-hook-form";
+import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { useSaveRecipe } from "../../hooks/api/useSaveRecipe.api";
 import { useDeleteRecipe } from "../../hooks/api/useDeleteRecipe.api";
 import { isAxiosError } from "axios";
 import swal from "sweetalert";
-
-export type RecipeInputs = {
-  name: string;
-  steps: string[];
-  chef: ChefModel;
-  ingredients: DraftRecipeIngredient[];
-  description: string;
-  imageUrl: string;
-};
+import { zodResolver } from "@hookform/resolvers/zod";
+import { RecipeDetailsSchema } from "../../../../shared/validation/recipeDetailsSchema.validation";
 
 type RecipeProps = {
   uuid: string;
-  initialRecipe: RecipeInputs | undefined;
+  initialRecipe: RecipeDetails | undefined;
   chefs: ChefModel[];
   ingredients: IngredientModel[];
 };
@@ -49,14 +41,9 @@ export const Recipe: FC<RecipeProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    control,
-    formState: { errors },
-  } = useForm<RecipeInputs>({
+  const methods = useForm<RecipeDetails>({
     defaultValues: initialRecipe ?? {
+      uuid,
       name: "",
       chef: undefined,
       description: "",
@@ -64,8 +51,17 @@ export const Recipe: FC<RecipeProps> = ({
       steps: [],
       ingredients: [],
     },
+    resolver: zodResolver(RecipeDetailsSchema),
   });
-  const { chef, imageUrl } = watch();
+
+  const {
+    handleSubmit,
+    watch,
+    control,
+    formState: { errors },
+  } = methods;
+
+  const allValues = watch();
 
   const displayError = (err: unknown) => {
     let text = "";
@@ -81,46 +77,30 @@ export const Recipe: FC<RecipeProps> = ({
     navigate(-1);
   });
 
-  const onSubmit: SubmitHandler<RecipeInputs> = async ({
-    name,
-    chef,
-    description,
-    imageUrl,
-    steps,
-    ingredients,
-  }) => {
-    const recipeDetails: RecipeDetails = {
-      uuid,
-      name,
-      chef,
-      description,
-      imageUrl,
-      steps,
-      ingredients: ingredients.map((ri) => ({
-        uuid: ri.uuid,
-        recipe: { uuid },
-        ingredient: { uuid: ri!.ingredient!.uuid! },
-        amount: ri!.amount!,
-        measurementUnit: ri!.measurementUnit!,
-      })),
-    };
-
-    await saveRecipe(recipeDetails);
-  };
+  const chef = useMemo(
+    () => chefs.find((c) => c.uuid === allValues?.chef?.uuid),
+    [allValues?.chef?.uuid]
+  );
 
   return (
-    <Box component="form" onSubmit={handleSubmit(onSubmit)}>
+    <FormProvider {...methods}>
       <Grid container spacing={2} sx={Styles.gridContainer}>
         <Grid size={{ xs: 6, lg: 3.5, xl: 6 }}>
-          <TextField
-            fullWidth
-            sx={Styles.nameTextField}
-            id="outlined-basic"
-            label="Recipe name"
-            variant="outlined"
-            {...register("name", { required: true, maxLength: 20 })}
-            error={!!errors.name}
-            helperText={errors.name && "Recipe name is required"}
+          <Controller
+            name="name"
+            control={control}
+            defaultValue=""
+            render={({ field }) => (
+              <TextField
+                {...field}
+                fullWidth
+                sx={Styles.nameTextField}
+                label="Recipe name"
+                variant="outlined"
+                error={!!errors.name}
+                helperText={errors.name && "Recipe name is required"}
+              />
+            )}
           />
         </Grid>
         <Grid size={{ xs: 6, lg: 4.5, xl: 6 }}>
@@ -143,9 +123,10 @@ export const Recipe: FC<RecipeProps> = ({
               >
                 <Autocomplete
                   options={chefs}
-                  getOptionLabel={(option) =>
-                    `${option.firstName} ${option.lastName}`
-                  }
+                  getOptionLabel={(option) => {
+                    const chef = chefs.find((c) => c.uuid === option.uuid);
+                    return `${chef?.firstName} ${chef?.lastName}`;
+                  }}
                   value={value || null}
                   onChange={(_, newValue) => onChange(newValue)}
                   renderInput={(params) => (
@@ -165,54 +146,72 @@ export const Recipe: FC<RecipeProps> = ({
           />
         </Grid>
         <Grid size={{ xs: 12, lg: 8, xl: 6 }}>
-          <TextField
-            fullWidth
-            multiline
-            id="outlined-basic"
-            label="Short description"
-            variant="outlined"
-            {...register("description", { required: false })}
+          <Controller
+            name="description"
+            control={control}
+            defaultValue=""
+            render={({ field }) => (
+              <TextField
+                {...field}
+                fullWidth
+                multiline
+                label="Short description"
+                variant="outlined"
+              />
+            )}
           />
         </Grid>
 
         <Grid size={{ xs: 12, lg: 8, xl: 6 }}>
-          <TextField
-            fullWidth
-            id="outlined-basic"
-            label="Image url"
-            variant="outlined"
-            {...register("imageUrl", {
-              required: true,
-              pattern: /https?:\/\/[^\/\s]+\/[^\/\s]/i,
-            })}
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label={"Open image"}
-                      onClick={() => window.open(imageUrl)}
-                      edge="end"
-                    >
-                      <OpenInNewIcon />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              },
-            }}
-            error={!!errors.imageUrl}
-            helperText={errors.imageUrl && "Valid image URL is required"}
+          <Controller
+            name="imageUrl"
+            control={control}
+            defaultValue=""
+            render={({ field }) => (
+              <TextField
+                {...field}
+                fullWidth
+                label="Image url"
+                variant="outlined"
+                slotProps={{
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="Open image"
+                          onClick={() => window.open(field.value)}
+                          edge="end"
+                        >
+                          <OpenInNewIcon />
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+                error={!!errors.imageUrl}
+                helperText={errors.imageUrl && "Valid image URL is required"}
+              />
+            )}
           />
         </Grid>
         <Grid size={{ xs: 12, lg: 8, xl: 6 }}>
           <RecipeStepsList control={control} />
         </Grid>
         <Grid size={{ xs: 12, lg: 8, xl: 6 }}>
-          <RecipeIngredientsTable ingredients={ingredients} control={control} />
+          <RecipeIngredientsTable
+            ingredients={ingredients}
+            control={control}
+            recipeUuid={uuid}
+          />
         </Grid>
 
         <Grid size={{ xs: 4, md: 3, lg: 4.1, xl: 3 }}>
-          <Button fullWidth variant="outlined" size="large" type="submit">
+          <Button
+            fullWidth
+            variant="outlined"
+            size="large"
+            onClick={handleSubmit(async () => await saveRecipe(allValues))}
+          >
             Save
           </Button>
         </Grid>
@@ -230,6 +229,6 @@ export const Recipe: FC<RecipeProps> = ({
           </Button>
         </Grid>
       </Grid>
-    </Box>
+    </FormProvider>
   );
 };

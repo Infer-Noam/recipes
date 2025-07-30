@@ -1,22 +1,20 @@
 import { Router, Request, Response, NextFunction } from "express";
 import service from "./chef.service";
-import {
-  SaveChefReq,
-  SaveChefRes,
-} from "@shared/http-types/chef/saveChef.http-type";
-import { GetAllChefsRes } from "@shared/http-types/chef/getAllChefs.http-type";
-import {
-  DeleteChefReq,
-  DeleteChefRes,
-} from "@shared/http-types/chef/deleteChef.http-type";
+import { SaveChefReq, SaveChefRes } from "@shared/api/chef/saveChef.api";
+import { GetAllChefsRes } from "@shared/api/chef/getAllChefs.api";
+import { DeleteChefReq, DeleteChefRes } from "@shared/api/chef/deleteChef.api";
 import { HttpError } from "@shared/types/httpError.type";
+import { ChefDetailsSchema } from "@shared/validation/chefDetailsSchema.validation";
+import { validateZodSchema } from "../middleware/validation.middleware";
+import { UuidSchema } from "@shared/validation/uuidSchema.validation";
 
 const router = Router();
 
 router.post(
   "/",
+  validateZodSchema(ChefDetailsSchema, "chefDetails"),
   async (
-    req: Request<null, null, SaveChefReq>,
+    req: Request<unknown, SaveChefRes, SaveChefReq>,
     res: Response<SaveChefRes>,
     next: NextFunction
   ) => {
@@ -48,8 +46,9 @@ router.get(
 
 router.delete(
   "/",
+  validateZodSchema(UuidSchema),
   async (
-    req: Request<null, null, DeleteChefReq>,
+    req: Request<unknown, DeleteChefRes, DeleteChefReq>,
     res: Response<DeleteChefRes>,
     next: NextFunction
   ) => {

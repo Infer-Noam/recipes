@@ -28,9 +28,12 @@ const container: SxProps = {
 
 const centerAlign: SxProps = {
   textAlign: "center",
+  verticalAlign: "top",
 };
 
 const labelTypography = { fontWeight: "bold" };
+
+const error = { mt: 1, display: "block" };
 
 export default {
   amountTextFieldInput,
@@ -41,4 +44,5 @@ export default {
   container,
   centerAlign,
   labelTypography,
+  error,
 };

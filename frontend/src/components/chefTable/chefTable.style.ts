@@ -7,6 +7,7 @@ const container: SxProps = {
 
 const centerAlign: SxProps = {
   textAlign: "center",
+  verticalAlign: "top"
 };
 
 const labelTypography = { fontWeight: "bold" };

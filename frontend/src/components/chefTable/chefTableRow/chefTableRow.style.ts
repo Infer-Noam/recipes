@@ -4,7 +4,9 @@ const chefTableRow: SxProps = {
   "&:last-child td, &:last-child th": { border: 0 },
 };
 
-const firstNameTextField: SxProps = { width: "100px" };
+const firstNameTextField: SxProps = {
+  width: "100px",
+};
 
 const lastNameTextField: SxProps = { width: "100px" };
 
@@ -14,6 +16,7 @@ const phoneTextField: SxProps = { width: "120px" };
 
 const centerAlign: SxProps = {
   textAlign: "center",
+  verticalAlign: "top",
 };
 
 export default {

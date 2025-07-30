@@ -3,7 +3,7 @@ import { useQueryClient, useMutation } from "@tanstack/react-query";
 import type {
   DeleteRecipeReq,
   DeleteRecipeRes,
-} from "../../../../shared/http-types/recipe/deleteRecipe.http-type";
+} from "../../../../shared/api/recipe/deleteRecipe.http-type";
 import { USE_GET_RECIPES_KEY } from "./useGetRecipes.api";
 
 const mutationFn = async (uuid: string) => {

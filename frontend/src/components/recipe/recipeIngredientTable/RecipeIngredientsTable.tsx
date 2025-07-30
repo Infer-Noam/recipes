@@ -23,29 +23,34 @@ import {
   useTheme,
   useMediaQuery,
 } from "@mui/material";
-import { type RecipeIngredient as RecipeIngredientModel } from "../../../../../shared/types/recipeIngredient.type";
+import {
+  type RecipeIngredientDetails,
+  type RecipeIngredient as RecipeIngredientModel,
+} from "../../../../../shared/types/recipeIngredient.type";
 import { type Ingredient as IngredientModel } from "../../../../../shared/types/ingredient.type";
 import { MeasurementUnit } from "../../../../../shared/enums/measurement-unit.enum";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
-import { type DraftRecipeIngredient } from "./draftRecipeIngredient.type";
 import { v4 as uuidv4 } from "uuid";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { Controller, type Control } from "react-hook-form";
-import type { RecipeInputs } from "../Recipe";
+import { useFormContext } from "react-hook-form";
+import type { RecipeDetails } from "@shared/types/recipe.type";
 
 type RecipeIngredientsTableProps = {
   ingredients: IngredientModel[];
-  control: Control<RecipeInputs, any, RecipeInputs>;
+  control: Control<RecipeDetails, unknown, RecipeDetails>;
+  recipeUuid: String;
 };
 
 export const RecipeIngredientsTable: FC<RecipeIngredientsTableProps> = ({
   ingredients,
   control,
+  recipeUuid,
 }) => {
   const setRecipeIngredient = (
     updatedFields: Partial<RecipeIngredientModel>,
-    value: DraftRecipeIngredient[],
+    value: RecipeIngredientDetails[],
     onChange: (...event: any[]) => void,
     uuid?: string
   ) => {
@@ -62,35 +67,17 @@ export const RecipeIngredientsTable: FC<RecipeIngredientsTableProps> = ({
     </TableCell>
   );
 
+  const {
+    formState: { errors },
+  } = useFormContext();
+
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.down("sm"));
 
   return (
     <Controller
-      name="recipeIngredients"
+      name="ingredients"
       control={control}
-      rules={{
-        required: "At least one ingredient is required",
-        validate: {
-          minIngredients: (value) =>
-            value.length >= 1 || "Recipe must have at least one ingredient",
-          validIngredients: (value) => {
-            const invalidIngredients = value.filter(
-              (ingredient) =>
-                !ingredient.ingredient?.uuid ||
-                !ingredient.amount ||
-                ingredient.amount <= 0 ||
-                !ingredient.measurementUnit
-            );
-            return (
-              invalidIngredients.length === 0 ||
-              `${invalidIngredients.length} one or more ingredient is invalid`
-            );
-          },
-          maxIngredients: (value) =>
-            value.length <= 50 || "Recipe cannot have more than 50 ingredients",
-        },
-      }}
       render={({
         field: { value: recipeIngredients, onChange: setRecipeIngredients },
         fieldState: { error },
@@ -113,112 +100,144 @@ export const RecipeIngredientsTable: FC<RecipeIngredientsTableProps> = ({
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {recipeIngredients.map((ri) => (
-                        <TableRow
-                          key={ri.uuid}
-                          sx={Styles.recipeIngredientTableRow}
-                        >
-                          <TableCell sx={Styles.centerAlign}>
-                            <Box sx={Styles.ingredientAutocompleteBox}>
-                              <Autocomplete
-                                sx={Styles.ingredientAutocomplete}
-                                value={
-                                  ingredients.find(
-                                    (i) => i.uuid === ri.ingredient?.uuid
-                                  )?.name ?? ""
+                      {recipeIngredients.map((ri, index) => {
+                        const amountError =
+                          Array.isArray(errors.ingredients) &&
+                          errors.ingredients[index]?.amount;
+
+                        const measurementUnitError =
+                          Array.isArray(errors.ingredients) &&
+                          errors.ingredients[index]?.measurementUnit;
+
+                        const ingredientError =
+                          Array.isArray(errors.ingredients) &&
+                          errors.ingredients[index]?.ingredient;
+
+                        return (
+                          <TableRow
+                            key={ri.uuid}
+                            sx={Styles.recipeIngredientTableRow}
+                          >
+                            <TableCell sx={Styles.centerAlign}>
+                              <Box sx={Styles.ingredientAutocompleteBox}>
+                                <Autocomplete
+                                  sx={Styles.ingredientAutocomplete}
+                                  value={
+                                    ingredients.find(
+                                      (i) => i.uuid === ri.ingredient?.uuid
+                                    )?.name ?? ""
+                                  }
+                                  onChange={(
+                                    _: any,
+                                    newValue: string | null
+                                  ) => {
+                                    if (!newValue) return;
+
+                                    const ingredientIndex =
+                                      ingredients.findIndex(
+                                        (i) => i.name === newValue
+                                      );
+
+                                    if (ingredientIndex === -1) return;
+
+                                    setRecipeIngredient(
+                                      {
+                                        ingredient:
+                                          ingredients[ingredientIndex],
+                                      },
+                                      recipeIngredients,
+                                      setRecipeIngredients,
+                                      ri.uuid
+                                    );
+                                  }}
+                                  options={ingredients.map((i) => i.name)}
+                                  renderInput={(params) => (
+                                    <TextField
+                                      {...params}
+                                      error={!!ingredientError}
+                                      helperText={
+                                        ingredientError?.message &&
+                                        "Ingredient is required"
+                                      }
+                                    />
+                                  )}
+                                />
+                              </Box>
+                            </TableCell>
+                            <TableCell sx={Styles.centerAlign}>
+                              <TextField
+                                type="number"
+                                value={ri?.amount}
+                                onChange={(e) => {
+                                  const value = parseInt(e.target.value);
+                                  if (value >= 0 && value <= 99) {
+                                    setRecipeIngredient(
+                                      { amount: value },
+                                      recipeIngredients,
+                                      setRecipeIngredients,
+                                      ri.uuid
+                                    );
+                                  }
+                                }}
+                                slotProps={{
+                                  input: {
+                                    sx: Styles.amountTextFieldInput,
+                                    inputProps: {
+                                      min: 0,
+                                      max: 99,
+                                    },
+                                  },
+                                }}
+                                variant="outlined"
+                                error={!!amountError}
+                                helperText={
+                                  amountError?.message &&
+                                  "Valid amount is required"
                                 }
-                                onChange={(_: any, newValue: string | null) => {
-                                  if (!newValue) return;
-
-                                  const ingredientIndex = ingredients.findIndex(
-                                    (i) => i.name === newValue
-                                  );
-
-                                  if (ingredientIndex === -1) return;
-
+                              />
+                            </TableCell>
+                            <TableCell sx={Styles.centerAlign}>
+                              <Select
+                                sx={Styles.measurementUnitSelect}
+                                value={ri.measurementUnit}
+                                onChange={(e) => {
                                   setRecipeIngredient(
                                     {
-                                      ingredient: ingredients[ingredientIndex],
+                                      measurementUnit: e.target.value,
                                     },
                                     recipeIngredients,
                                     setRecipeIngredients,
                                     ri.uuid
                                   );
                                 }}
-                                options={ingredients.map((i) => i.name)}
-                                renderInput={(params) => (
-                                  <TextField {...params} />
-                                )}
-                              />
-                            </Box>
-                          </TableCell>
-                          <TableCell sx={Styles.centerAlign}>
-                            <TextField
-                              type="number"
-                              value={ri?.amount}
-                              onChange={(e) => {
-                                const value = parseInt(e.target.value);
-                                if (value >= 0 && value <= 99) {
-                                  setRecipeIngredient(
-                                    { amount: value },
-                                    recipeIngredients,
-                                    setRecipeIngredients,
-                                    ri.uuid
-                                  );
-                                }
-                              }}
-                              slotProps={{
-                                input: {
-                                  sx: Styles.amountTextFieldInput,
-                                  inputProps: {
-                                    min: 0,
-                                    max: 99,
-                                  },
-                                },
-                              }}
-                              variant="outlined"
-                            />
-                          </TableCell>
-                          <TableCell sx={Styles.centerAlign}>
-                            <Select
-                              sx={Styles.measurementUnitSelect}
-                              value={ri.measurementUnit}
-                              onChange={(e) => {
-                                setRecipeIngredient(
-                                  {
-                                    measurementUnit: e.target.value,
-                                  },
-                                  recipeIngredients,
-                                  setRecipeIngredients,
-                                  ri.uuid
-                                );
-                              }}
-                            >
-                              {Object.values(MeasurementUnit).map(
-                                (m, index) => (
-                                  <MenuItem key={index} value={m}>
-                                    {m}
-                                  </MenuItem>
-                                )
-                              )}
-                            </Select>
-                          </TableCell>
-                          <TableCell>
-                            <IconButton
-                              onClick={() =>
-                                setRecipeIngredients(
-                                  recipeIngredients.filter(
-                                    (recipeIngredient) =>
-                                      ri.uuid !== recipeIngredient.uuid
+                                error={!!measurementUnitError}
+                              >
+                                {Object.values(MeasurementUnit).map(
+                                  (m, index) => (
+                                    <MenuItem key={index} value={m}>
+                                      {m}
+                                    </MenuItem>
                                   )
-                                )
-                              }
-                            >
-                              <RemoveIcon />
-                            </IconButton>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                                )}
+                              </Select>
+                            </TableCell>
+                            <TableCell>
+                              <IconButton
+                                onClick={() =>
+                                  setRecipeIngredients(
+                                    recipeIngredients.filter(
+                                      (recipeIngredient) =>
+                                        ri.uuid !== recipeIngredient.uuid
+                                    )
+                                  )
+                                }
+                              >
+                                <RemoveIcon />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                       <TableRow></TableRow>
                     </TableBody>
                   </Table>
@@ -230,7 +249,7 @@ export const RecipeIngredientsTable: FC<RecipeIngredientsTableProps> = ({
                 onClick={() =>
                   setRecipeIngredients([
                     ...recipeIngredients,
-                    { uuid: uuidv4() },
+                    { uuid: uuidv4(), recipe: { uuid: recipeUuid } },
                   ])
                 }
                 startIcon={<AddIcon />}
@@ -240,11 +259,7 @@ export const RecipeIngredientsTable: FC<RecipeIngredientsTableProps> = ({
             </AccordionActions>
           </Accordion>
           {error && (
-            <Typography
-              color="error"
-              variant="caption"
-              sx={{ mt: 1, display: "block" }}
-            >
+            <Typography color="error" variant="caption" sx={Styles.error}>
               {error.message}
             </Typography>
           )}

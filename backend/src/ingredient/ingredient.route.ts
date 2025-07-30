@@ -3,15 +3,18 @@ import service from "./ingredient.service";
 import {
   CreateIngredientReq,
   CreateIngredientRes,
-} from "@shared/http-types/ingredient/createIngredient.http-type";
-import { GetAllIngredientsRes } from "@shared/http-types/ingredient/getAllIngredients.http-type";
+} from "@shared/api/ingredient/createIngredient.api";
+import { GetAllIngredientsRes } from "@shared/api/ingredient/getAllIngredients.api";
+import { validateZodSchema } from "../middleware/validation.middleware";
+import { IngredientNameSchema } from "@shared/validation/ingredientNameSchema.validation";
 
 const router = Router();
 
 router.post(
   "/",
+  validateZodSchema(IngredientNameSchema),
   async (
-    req: Request<null, null, CreateIngredientReq>,
+    req: Request<unknown, CreateIngredientRes, CreateIngredientReq>,
     res: Response<CreateIngredientRes>,
     next: NextFunction
   ) => {

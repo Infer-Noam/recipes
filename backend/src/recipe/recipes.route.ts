@@ -3,21 +3,24 @@ import service from "./recipe.service";
 import {
   SaveRecipeReq,
   SaveRecipeRes,
-} from "@shared/http-types/recipe/saveRecipe.http-type";
+} from "@shared/api/recipe/saveRecipe.http-type";
 import {
   DeleteRecipeReq,
   DeleteRecipeRes,
-} from "@shared/http-types/recipe/deleteRecipe.http-type";
-import { GetRecipeByIdRes } from "@shared/http-types/recipe/getRecipeByUuid.http-type";
-import { GetAllRecipesRes } from "@shared/http-types/recipe/getAllRecipes.http-type";
+} from "@shared/api/recipe/deleteRecipe.http-type";
+import { GetRecipeByIdRes } from "@shared/api/recipe/getRecipeByUuid.http-type";
+import { GetAllRecipesRes } from "@shared/api/recipe/getAllRecipes.http-type";
 import { HttpError } from "@shared/types/httpError.type";
-
+import { validateZodSchema } from "../middleware/validation.middleware";
+import { RecipeDetailsSchema } from "@shared/validation/recipeDetailsSchema.validation";
+import { UuidSchema } from "@shared/validation/uuidSchema.validation";
 const router = Router();
 
 router.post(
   "/",
+  validateZodSchema(RecipeDetailsSchema, "recipeDetails"),
   async (
-    req: Request<null, null, SaveRecipeReq>,
+    req: Request<unknown, SaveRecipeRes, SaveRecipeReq>,
     res: Response<SaveRecipeRes>,
     next: NextFunction
   ) => {
@@ -36,8 +39,9 @@ router.post(
 
 router.delete(
   "/",
+  validateZodSchema(UuidSchema),
   async (
-    req: Request<null, null, DeleteRecipeReq>,
+    req: Request<unknown, DeleteRecipeRes, DeleteRecipeReq>,
     res: Response<DeleteRecipeRes>,
     next: NextFunction
   ) => {

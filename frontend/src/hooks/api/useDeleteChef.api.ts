@@ -4,7 +4,7 @@ import { USE_GET_CHEFS_KEY } from "./useGetChefs.api";
 import type {
   DeleteChefReq,
   DeleteChefRes,
-} from "../../../../shared/http-types/chef/deleteChef.http-type";
+} from "../../../../shared/api/chef/deleteChef.api";
 
 const mutationFn = async (uuid: string) => {
   const data: DeleteChefReq = { uuid };

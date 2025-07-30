@@ -1,4 +1,4 @@
-import type { GetRecipeByIdRes } from "../../../../shared/http-types/recipe/getRecipeByUuid.http-type";
+import type { GetRecipeByIdRes } from "../../../../shared/api/recipe/getRecipeByUuid.http-type";
 import { useQuery } from "@tanstack/react-query";
 import api from "../../api";
 
