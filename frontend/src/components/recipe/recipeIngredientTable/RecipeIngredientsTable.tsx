@@ -33,7 +33,7 @@ import { type Ingredient as IngredientModel } from "../../../../../shared/types/
 import { MeasurementUnit } from "../../../../../shared/enums/measurement-unit.enum";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
-import { type DraftRecipeIngredient } from "../recipeIngredientTable/draftRecipeIngredient.type";
+import { type DraftRecipeIngredient } from "./draftRecipeIngredient.type";
 import { v4 as uuidv4 } from "uuid";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import CustomTableCell from "../../customTableCell/CustomTableCell";
@@ -50,8 +50,8 @@ export const RecipeIngredientsTable: FC<RecipeIngredientsTableProps> = ({
   setRecipeIngredients,
 }) => {
   const setRecipeIngredient = (
-    uuid: string,
-    updatedFields: Partial<RecipeIngredientModel>
+    updatedFields: Partial<RecipeIngredientModel>,
+    uuid?: string
   ) => {
     setRecipeIngredients((prev) =>
       prev.map((recipeIngredient) =>
@@ -68,7 +68,7 @@ export const RecipeIngredientsTable: FC<RecipeIngredientsTableProps> = ({
   ) => {
     const value = parseInt(e.target.value);
     if (value >= 0 && value <= 99) {
-      setRecipeIngredient(uuid, { amount: value });
+      setRecipeIngredient({ amount: value }, uuid);
     }
   };
 
@@ -114,9 +114,12 @@ export const RecipeIngredientsTable: FC<RecipeIngredientsTableProps> = ({
                           );
                           if (ingredientIndex === -1) return;
 
-                          setRecipeIngredient(recipeIngredient.uuid, {
-                            ingredient: ingredients[ingredientIndex],
-                          });
+                          setRecipeIngredient(
+                            {
+                              ingredient: ingredients[ingredientIndex],
+                            },
+                            recipeIngredient.uuid
+                          );
                         }}
                         options={ingredients.map(
                           (ingredient) => ingredient.name
@@ -147,9 +150,12 @@ export const RecipeIngredientsTable: FC<RecipeIngredientsTableProps> = ({
                       sx={Styles.measurementUnitSelect}
                       value={recipeIngredient.measurementUnit}
                       onChange={(e) => {
-                        setRecipeIngredient(recipeIngredient.uuid, {
-                          measurementUnit: e.target.value,
-                        });
+                        setRecipeIngredient(
+                          {
+                            measurementUnit: e.target.value,
+                          },
+                          recipeIngredient.uuid
+                        );
                       }}
                     >
                       {Object.values(MeasurementUnit).map(

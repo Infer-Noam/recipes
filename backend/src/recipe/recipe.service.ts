@@ -13,27 +13,16 @@ const relations: FindOptionsRelations<Recipe> = {
   chef: true,
 };
 
-export const saveRecipe = async (
-  recipeDetails: RecipeDetails
-) => {
+export const saveRecipe = async (recipeDetails: RecipeDetails) => {
   const { uuid, ...rest } = recipeDetails;
 
-  try {
-    const recipe = await AppDataSource.transaction(async (transaction) => {
-      return await transaction.save(Recipe, {
+  return await AppDataSource.transaction(
+    async (transaction) =>
+      await transaction.save(Recipe, {
         ...rest,
         ...(uuid !== undefined && { uuid }),
-      });
-    });
-
-    return { recipe };
-  } catch (err) {
-    return {
-      error: {
-        message: err instanceof Error ? err.message : "Unknown error occurred",
-      },
-    };
-  }
+      })
+  );
 };
 
 const deleteRecipe = async (uuid: string) => {

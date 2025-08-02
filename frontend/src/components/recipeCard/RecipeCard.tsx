@@ -12,7 +12,7 @@ import {
   Box,
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import LocalGroceryStoreIcon from "@mui/icons-material/LocalGroceryStore";
+import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import Styles from "./recipeCard.style";
 import { type Recipe as RecipeModel } from "../../../../shared/types/recipe.type";
 import { type RecipeIngredient as RecipeIngredientModel } from "../../../../shared/types/recipeIngredient.type";
@@ -94,7 +94,7 @@ export const RecipeCard: FC<RecipeCardProps> = ({
             arrow
           >
             <IconButton aria-label="ingredients">
-              <LocalGroceryStoreIcon />
+              <FormatListBulletedIcon />
             </IconButton>
           </Tooltip>
         </CardActions>

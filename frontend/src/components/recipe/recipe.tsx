@@ -38,25 +38,34 @@ type RecipeProps = {
       | MutateOptions<SaveRecipeRes, Error, RecipeDetails, unknown>
       | undefined
   ) => Promise<SaveRecipeRes>;
+  saveError: Error | null;
 };
 
 export const Recipe: FC<RecipeProps> = ({
-  recipe,
+  recipe: {
+    uuid,
+    name: initialName,
+    chef: initialChef,
+    description: initialDescription,
+    imageUrl: initialImageUrl,
+    steps: initialSteps,
+    ingredients: initialIngredients,
+  },
   chefs,
   ingredients,
   deleteRecipe,
   saveRecipe,
+  saveError,
 }) => {
   const navigate = useNavigate();
 
-  const [name, setName] = useState(recipe.name);
-  const [chef, setChef] = useState(recipe.chef);
-  const [description, setDescription] = useState(recipe.description);
-  const [imageUrl, setImageUrl] = useState(recipe.imageUrl);
-  const [steps, setSteps] = useState(recipe.steps);
-  const [recipeIngredients, setRecipeIngredients] = useState<
-    DraftRecipeIngredient[]
-  >(recipe.ingredients);
+  const [name, setName] = useState(initialName);
+  const [chef, setChef] = useState(initialChef);
+  const [description, setDescription] = useState(initialDescription);
+  const [imageUrl, setImageUrl] = useState(initialImageUrl);
+  const [steps, setSteps] = useState(initialSteps);
+  const [recipeIngredients, setRecipeIngredients] =
+    useState<DraftRecipeIngredient[]>(initialIngredients);
 
   const [errorText, setErrorText] = useState<string | undefined>(undefined);
 
@@ -76,24 +85,24 @@ export const Recipe: FC<RecipeProps> = ({
     );
     if (areIngredientsValid) {
       const recipeDetails: RecipeDetails = {
-        uuid: recipe.uuid,
+        uuid,
         name,
         chef,
         description,
         imageUrl,
         steps,
-        ingredients: recipeIngredients.map((ri) => ({
-          uuid: ri.uuid,
-          recipe: { uuid: recipe.uuid },
-          ingredient: { uuid: ri!.ingredient!.uuid! },
-          amount: ri!.amount!,
-          measurementUnit: ri!.measurementUnit!,
+        ingredients: recipeIngredients.map((recipeIngredient) => ({
+          uuid: recipeIngredient.uuid,
+          recipe: { uuid },
+          ingredient: { uuid: recipeIngredient!.ingredient!.uuid! },
+          amount: recipeIngredient!.amount!,
+          measurementUnit: recipeIngredient!.measurementUnit!,
         })),
       };
       const response = await saveRecipe(recipeDetails);
       if (response.recipe) navigate(-1);
       else {
-        setErrorText(response.error?.message ?? "");
+        setErrorText(saveError?.message);
       }
     } else {
       setErrorText("Recipe contain invalid ingredient");

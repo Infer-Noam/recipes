@@ -16,11 +16,15 @@ router.post(
     req: Request<null, null, SaveRecipeReq>,
     res: Response<SaveRecipeRes>
   ) => {
-    const result = await service.saveRecipe(req.body.recipeDetails);
-    if (result.recipe) {
-      res.status(200).json({ recipe: result.recipe });
-    } else {
-      res.status(500).json({ error: result.error });
+    try {
+      const recipe = await service.saveRecipe(req.body.recipeDetails);
+      if (recipe) {
+        res.status(200).json({ recipe });
+      } else {
+        res.sendStatus(500);
+      }
+    } catch (err) {
+      res.sendStatus(400);
     }
   }
 );

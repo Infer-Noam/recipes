@@ -5,8 +5,5 @@ export type SaveRecipeReq = {
 };
 
 export type SaveRecipeRes = {
-  recipe?: Recipe;
-  error?: {
-    message: string;
-  };
+  recipe: Recipe;
 };
