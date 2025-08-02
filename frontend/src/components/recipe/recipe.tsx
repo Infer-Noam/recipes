@@ -1,8 +1,5 @@
 import { type FC, useState } from "react";
-import {
-  type RecipeDetails,
-  type Recipe as RecipeModel,
-} from "../../../../shared/types/recipe.type";
+import { type RecipeDetails } from "../../../../shared/types/recipe.type";
 import { type Chef as ChefModel } from "../../../../shared/types/chef.type";
 import { type Ingredient as IngredientModel } from "../../../../shared/types/ingredient.type";
 import { RecipeIngredientsTable } from "./recipeIngredientTable/RecipeIngredientsTable";
@@ -22,11 +19,12 @@ import {
 import Styles from "./recipe.style";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import RecipeStepsList from "./recipeSteps/RecipeStepsList";
-import { useNavigate } from "react-router-dom";
 import type { DraftRecipeIngredient } from "./recipeIngredientTable/draftRecipeIngredient.type";
-import type { SaveRecipeRes } from "@shared/http-types/recipe/saveRecipe.http-type";
-import type { MutateOptions } from "@tanstack/react-query";
 import { Controller, useForm, type SubmitHandler } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
+import { useSaveRecipe } from "../../hooks/api/useSaveRecipe.api";
+import { useDeleteRecipe } from "../../hooks/api/useDeleteRecipe.api";
+import { isAxiosError } from "axios";
 
 export type RecipeInputs = {
   name: string;
@@ -38,34 +36,17 @@ export type RecipeInputs = {
 };
 
 type RecipeProps = {
-  recipe: RecipeModel;
+  uuid: string;
+  initialRecipe: RecipeInputs | undefined;
   chefs: ChefModel[];
   ingredients: IngredientModel[];
-  deleteRecipe: () => void;
-  saveRecipe: (
-    variables: RecipeDetails,
-    options?:
-      | MutateOptions<SaveRecipeRes, Error, RecipeDetails, unknown>
-      | undefined
-  ) => Promise<SaveRecipeRes>;
-  saveError: Error | null;
 };
 
 export const Recipe: FC<RecipeProps> = ({
-  recipe: {
-    uuid,
-    name: initialName,
-    chef: initialChef,
-    description: initialDescription,
-    imageUrl: initialImageUrl,
-    steps: initialSteps,
-    ingredients: initialIngredients,
-  },
+  uuid,
+  initialRecipe,
   chefs,
   ingredients,
-  deleteRecipe,
-  saveRecipe,
-  saveError,
 }) => {
   const navigate = useNavigate();
 
@@ -77,17 +58,39 @@ export const Recipe: FC<RecipeProps> = ({
     formState: { errors },
   } = useForm<RecipeInputs>({
     defaultValues: {
-      name: initialName,
-      chef: initialChef,
-      description: initialDescription,
-      imageUrl: initialImageUrl,
-      steps: initialSteps,
-      recipeIngredients: initialIngredients,
+      ...(initialRecipe ?? {
+        name: "",
+        chef: undefined,
+        description: "",
+        imageUrl: "",
+        steps: [],
+        recipeIngredients: [],
+      }),
     },
   });
-
   const { chef, imageUrl } = watch();
-  const [errorText, setErrorText] = useState<string | undefined>(undefined);
+  const [messageText, setMessage] = useState<string | undefined>(undefined);
+
+  const { mutateAsync: saveRecipe } = useSaveRecipe(
+    (err) => {
+      if (isAxiosError(err))
+        setMessage(err.response?.data?.message || "Failed to save recipe");
+      else setMessage("Something went wrong");
+    },
+    () => {
+      navigate(-1);
+    }
+  );
+  const { mutate: deleteRecipe } = useDeleteRecipe(
+    (err) => {
+      if (isAxiosError(err))
+        setMessage(err.response?.data?.message || "Failed to delete recipe");
+      else setMessage("Something went wrong");
+    },
+    () => {
+      navigate(-1);
+    }
+  );
 
   const onSubmit: SubmitHandler<RecipeInputs> = async ({
     name,
@@ -97,7 +100,6 @@ export const Recipe: FC<RecipeProps> = ({
     steps,
     recipeIngredients,
   }) => {
-
     const recipeDetails: RecipeDetails = {
       uuid,
       name,
@@ -114,18 +116,7 @@ export const Recipe: FC<RecipeProps> = ({
       })),
     };
 
-    try {
-      const response = await saveRecipe(recipeDetails);
-      if (response.recipe) {
-        navigate(-1);
-      } else {
-        setErrorText(saveError?.message || "Failed to save recipe");
-      }
-    } catch (error) {
-      setErrorText(
-        error instanceof Error ? error.message : "An error occurred"
-      );
-    }
+    await saveRecipe(recipeDetails);
   };
 
   return (
@@ -242,19 +233,18 @@ export const Recipe: FC<RecipeProps> = ({
             variant="outlined"
             size="large"
             onClick={() => {
-              deleteRecipe();
-              navigate(-1);
+              deleteRecipe(uuid);
             }}
           >
             Delete
           </Button>
         </Grid>
 
-        {errorText && (
+        {messageText && (
           <Grid size={{ xs: 8, md: 6.5, lg: 4, xl: 6.5 }}>
             <Alert severity="error">
               <AlertTitle>Error</AlertTitle>
-              {errorText}
+              {messageText}
             </Alert>
           </Grid>
         )}

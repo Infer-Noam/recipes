@@ -20,12 +20,11 @@ router.post(
   ) => {
     try {
       const recipe = await service.saveRecipe(req.body.recipeDetails);
-      if (recipe) {
-        res.status(200).json({ recipe });
-      } else {
-        res.sendStatus(500);
-      }
-      next()
+
+      if (!recipe) throw new HttpError("Recipe creation failed", 500);
+
+      res.status(200).json({ message: "Recipe saved successfully" });
+      next();
     } catch (err) {
       next(err);
     }
@@ -46,7 +45,7 @@ router.delete(
 
       if (!exist) throw new HttpError("Recipe not found", 404);
 
-      res.sendStatus(204);
+      res.status(200).json({ message: "Recipe deleted successfully" });
       next();
     } catch (err) {
       next(err);
@@ -59,10 +58,6 @@ router.get(
   async (_: Request, res: Response<GetAllRecipesRes>, next: NextFunction) => {
     try {
       const recipes = await service.getAllRecipes();
-
-      if (!recipes.length) {
-        throw new HttpError("Recipes not found", 404);
-      }
 
       res.status(200).json({ recipes });
       next();

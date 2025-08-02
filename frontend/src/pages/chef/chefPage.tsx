@@ -10,11 +10,32 @@ import type { FC } from "react";
 import CentralErrorAlert from "../../components/centralErrorAlert/CentralErrorAlert";
 
 const ChefPage: FC = () => {
-  const { data: chefs } = useGetChefs();
-  const { mutate: deleteChef } = useDeleteChef();
-  const { mutateAsync: saveChef, isError } = useSaveChef();
-
   const [message, setMessage] = useState<string | undefined>(undefined);
+  const [isError, setIsError] = useState<boolean>(false);
+
+  const { data: chefs } = useGetChefs();
+  const { mutateAsync: deleteChef } = useDeleteChef(
+    (err) => {
+      if (isAxiosError(err)) setMessage(err.response?.data.message);
+      else setMessage("Something went wrong");
+      setIsError(true);
+    },
+    (data) => {
+      setMessage(data.message);
+      setIsError(false);
+    }
+  );
+  const { mutateAsync: saveChef } = useSaveChef(
+    (err) => {
+      if (isAxiosError(err)) setMessage(err.response?.data.message);
+      else setMessage("Something went wrong");
+      setIsError(true);
+    },
+    (data) => {
+      setMessage(data.message);
+      setIsError(false);
+    }
+  );
 
   type AlertInfo = {
     severity: "success" | "error";
@@ -37,22 +58,7 @@ const ChefPage: FC = () => {
   if (chefs) {
     return (
       <Box>
-        <ChefTable
-          chefs={chefs}
-          deleteChef={(uuid) => {
-            deleteChef(uuid);
-            setMessage(undefined);
-          }}
-          saveChef={async (chefDetails) => {
-            setMessage(undefined);
-            await saveChef(chefDetails)
-              .then((response) => setMessage(response.message))
-              .catch((err) => {
-                if (isAxiosError(err)) setMessage(err.response?.data.message);
-                else setMessage(err?.message);
-              });
-          }}
-        />
+        <ChefTable chefs={chefs} deleteChef={deleteChef} saveChef={saveChef} />
         {message && (
           <Alert sx={Styles.alert} severity={alert.severity}>
             <AlertTitle>{alert.title}</AlertTitle>

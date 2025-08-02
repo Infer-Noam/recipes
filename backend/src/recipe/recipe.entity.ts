@@ -1,9 +1,17 @@
-import { Entity, ManyToOne, JoinColumn, Column, OneToMany } from "typeorm";
+import {
+  Entity,
+  ManyToOne,
+  JoinColumn,
+  Column,
+  OneToMany,
+  Check,
+} from "typeorm";
 import { AuditEntity } from "../audit.entity";
 import { Chef } from "../chef/chef.entity";
 import { RecipeIngredient } from "../recipe/recipe-ingredient/recipeIngredient.entity";
 
 @Entity()
+@Check(`"name" != '' AND "image_url" != ''`)
 export class Recipe extends AuditEntity {
   @Column({ type: "varchar", length: 20 })
   name: string;

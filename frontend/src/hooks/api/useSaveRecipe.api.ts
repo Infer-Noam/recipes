@@ -14,14 +14,19 @@ const mutationFn = async (recipeDetails: RecipeDetails) => {
   return response.data;
 };
 
-export const useSaveRecipe = () => {
+export const useSaveRecipe = (
+  onError?: (error: unknown) => void,
+  onSuccess?: (data: SaveRecipeRes) => void
+) => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn,
-    onSuccess: () => {
+    onSuccess: (response) => {
+      onSuccess?.(response);
       queryClient.invalidateQueries({ queryKey: [USE_GET_RECIPES_KEY] });
       queryClient.invalidateQueries({ queryKey: [USE_GET_RECIPE_BY_UUID_KEY] });
     },
+    onError,
   });
 };

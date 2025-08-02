@@ -5,7 +5,10 @@ import {
   SaveChefRes,
 } from "@shared/http-types/chef/saveChef.http-type";
 import { GetAllChefsRes } from "@shared/http-types/chef/getAllChefs.http-type";
-import { DeleteChefReq } from "@shared/http-types/chef/deleteChef.http-type";
+import {
+  DeleteChefReq,
+  DeleteChefRes,
+} from "@shared/http-types/chef/deleteChef.http-type";
 import { HttpError } from "@shared/types/httpError.type";
 
 const router = Router();
@@ -47,7 +50,7 @@ router.delete(
   "/",
   async (
     req: Request<null, null, DeleteChefReq>,
-    res: Response,
+    res: Response<DeleteChefRes>,
     next: NextFunction
   ) => {
     try {
@@ -57,7 +60,9 @@ router.delete(
 
       if (!exist) throw new HttpError("Chef dosen't exist", 404);
 
-      res.sendStatus(204);
+      res.status(200).json({
+        message: "Chef deleted successfully",
+      });
       next();
     } catch (err) {
       next(err);
