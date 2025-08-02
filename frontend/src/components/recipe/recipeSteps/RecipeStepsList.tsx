@@ -26,7 +26,7 @@ type RecipeStepsListProps = {
 };
 const RecipeStepsList: FC<RecipeStepsListProps> = ({ steps, setSteps }) => {
   const setStep = (index: number, newStep: string) => {
-    setSteps((steps) => steps.map((s, i) => (index === i ? newStep : s)));
+    setSteps((steps) => steps.map((step, i) => (index === i ? newStep : step)));
   };
 
   const addStep = () => {
