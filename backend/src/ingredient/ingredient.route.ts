@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import service from "./ingredient.service";
 import {
   CreateIngredientReq,
@@ -12,18 +12,36 @@ router.post(
   "/",
   async (
     req: Request<null, null, CreateIngredientReq>,
-    res: Response<CreateIngredientRes>
+    res: Response<CreateIngredientRes>,
+    next: NextFunction
   ) => {
-    const name = req.body.name;
-    const ingredient = await service.createIngredient(name);
+    try {
+      const name = req.body.name;
+      const ingredient = await service.createIngredient(name);
 
-    res.status(201).json({ ingredient });
+      res.status(201).json({ ingredient });
+      next();
+    } catch (err) {
+      next(err);
+    }
   }
 );
 
-router.get("/", async (_: Request, res: Response<GetAllIngredientsRes>) => {
-  const ingredients = await service.getAllIngredients();
-  return res.status(200).json({ ingredients });
-});
+router.get(
+  "/",
+  async (
+    _: Request,
+    res: Response<GetAllIngredientsRes>,
+    next: NextFunction
+  ) => {
+    try {
+      const ingredients = await service.getAllIngredients();
+      res.status(200).json({ ingredients });
+      next();
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 export default router;

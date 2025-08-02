@@ -5,6 +5,7 @@ import cors from "cors";
 import errorLogger from "./middleware/logger/error-logger.middleware";
 import requestLogger from "./middleware/logger/request-logger.middleware";
 import apiRouter from "./api.route";
+import errorHandler from "./middleware/errorHandler.middleware";
 
 const app = express();
 
@@ -26,12 +27,10 @@ app.use(express.urlencoded({ extended: true }));
 // Routers
 app.use("/api", apiRouter);
 
-// The final route
-app.all("/{*catchall}", (req, res) => {
-  res.sendStatus(404);
-});
-
 // Error logger should be after all middleware and routers
 app.use(errorLogger);
+
+// Error handler should be after all middleware and routers
+app.use(errorHandler);
 
 export default app;

@@ -13,13 +13,18 @@ const mutationFn = async (chefDetails: ChefDetails) => {
   return response.data;
 };
 
-export const useSaveChef = () => {
+export const useSaveChef = (
+  onError?: (error: unknown) => void,
+  onSuccess?: (data: SaveChefRes) => void
+) => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn,
-    onSuccess: () => {
+    onSuccess: (response) => {
+      onSuccess?.(response);
       queryClient.invalidateQueries({ queryKey: [USE_GET_CHEFS_KEY] });
     },
+    onError,
   });
 };

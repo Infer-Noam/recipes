@@ -3,6 +3,7 @@ import {
   AccordionActions,
   AccordionDetails,
   AccordionSummary,
+  Box,
   Button,
   IconButton,
   List,
@@ -14,67 +15,118 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import RemoveIcon from "@mui/icons-material/Remove";
-import type { FC, Dispatch, SetStateAction } from "react";
+import type { FC } from "react";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import AddIcon from "@mui/icons-material/Add";
 import { useTheme } from "@mui/material/styles";
 import Styles from "./recipeStepsList.style";
+import type { RecipeInputs } from "../recipe";
+import { Controller, type Control } from "react-hook-form";
 
 type RecipeStepsListProps = {
-  steps: string[];
-  setSteps: Dispatch<SetStateAction<string[]>>;
+  control: Control<RecipeInputs, any, RecipeInputs>;
 };
-const RecipeStepsList: FC<RecipeStepsListProps> = ({ steps, setSteps }) => {
-  const setStep = (index: number, newStep: string) => {
-    setSteps((steps) => steps.map((step, i) => (index === i ? newStep : step)));
+const RecipeStepsList: FC<RecipeStepsListProps> = ({ control }) => {
+  const setStep = (
+    index: number,
+    steps: string[],
+    newStep: string,
+    onChange: (...event: any[]) => void
+  ) => {
+    onChange(steps.map((step, i) => (index === i ? newStep : step)));
   };
 
-  const addStep = () => {
-    setSteps((steps) => [...steps, ""]);
+  const addStep = (steps: string[], onChange: (...event: any[]) => void) => {
+    onChange([...steps, ""]);
   };
 
-  const removeStep = (index: number) => {
-    setSteps((steps) => steps.filter((_, i) => index !== i));
+  const removeStep = (
+    index: number,
+    steps: string[],
+    onChange: (...event: any[]) => void
+  ) => {
+    onChange(steps.filter((_, i) => index !== i));
   };
 
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.down("sm"));
 
   return (
-    <Accordion defaultExpanded={!isXs}>
-      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Typography component="span">Steps</Typography>
-      </AccordionSummary>
-      <AccordionDetails>
-        <List>
-          {steps.map((step, index) => (
-            <ListItem key={index}>
-              <ListItemText sx={Styles.textField}>
-                <TextField
-                  multiline
-                  fullWidth
-                  id="outlined-basic"
-                  label={`Step ${index + 1}`}
-                  variant="outlined"
-                  value={step}
-                  onChange={(e) => setStep(index, e.target.value)}
-                />
-              </ListItemText>
-              <ListItemIcon>
-                <IconButton onClick={() => removeStep(index)}>
-                  <RemoveIcon />
-                </IconButton>
-              </ListItemIcon>
-            </ListItem>
-          ))}
-        </List>
-      </AccordionDetails>
-      <AccordionActions>
-        <Button onClick={addStep} startIcon={<AddIcon />}>
-          Add step
-        </Button>
-      </AccordionActions>
-    </Accordion>
+    <Controller
+      name="steps"
+      control={control}
+      rules={{
+        required: "At least one step is required",
+        validate: {
+          minSteps: (value) =>
+            value.length >= 1 || "Recipe must have at least one step",
+          noEmptySteps: (value) =>
+            value.every((step) => step.trim().length > 0) ||
+            "All steps must have content",
+          maxSteps: (value) =>
+            value.length <= 20 || "Recipe cannot have more than 20 steps",
+        },
+      }}
+      render={({
+        field: { value: steps, onChange },
+        fieldState: { error },
+      }) => (
+        <Box>
+          <Accordion defaultExpanded={!isXs}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography component="span">Steps</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <List>
+                {steps.map((step, index) => {
+                  return (
+                    <ListItem key={index}>
+                      <ListItemText sx={Styles.textField}>
+                        <TextField
+                          multiline
+                          fullWidth
+                          id="outlined-basic"
+                          label={`Step ${index + 1}`}
+                          variant="outlined"
+                          value={step}
+                          onChange={(e) =>
+                            setStep(index, steps, e.target.value, onChange)
+                          }
+                        />
+                      </ListItemText>
+                      <ListItemIcon>
+                        <IconButton
+                          onClick={() => removeStep(index, steps, onChange)}
+                        >
+                          <RemoveIcon />
+                        </IconButton>
+                      </ListItemIcon>
+                    </ListItem>
+                  );
+                })}
+              </List>
+            </AccordionDetails>
+            <AccordionActions>
+              <Button
+                onClick={() => addStep(steps, onChange)}
+                startIcon={<AddIcon />}
+              >
+                Add step
+              </Button>
+            </AccordionActions>
+          </Accordion>
+          {error && (
+            <Typography
+              color="error"
+              variant="caption"
+              sx={Styles.errorTypography}
+            >
+              {error.message}
+            </Typography>
+          )}
+        </Box>
+      )}
+    />
   );
 };
 

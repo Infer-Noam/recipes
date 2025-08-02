@@ -12,9 +12,27 @@ import CentralErrorAlert from "../../components/centralErrorAlert/CentralErrorAl
 const ChefPage: FC = () => {
   const { data: chefs } = useGetChefs();
   const { mutate: deleteChef } = useDeleteChef();
-  const { mutateAsync: saveChef, error, isError } = useSaveChef();
+  const { mutateAsync: saveChef, isError } = useSaveChef();
 
   const [message, setMessage] = useState<string | undefined>(undefined);
+
+  type AlertInfo = {
+    severity: "success" | "error";
+    title: "Success" | "Error";
+  };
+
+  const errorAlert: Record<"success" | "error", AlertInfo> = {
+    error: {
+      severity: "error",
+      title: "Error",
+    },
+    success: {
+      severity: "success",
+      title: "Success",
+    },
+  };
+
+  const alert = isError ? errorAlert.error : errorAlert.success;
 
   if (chefs) {
     return (
@@ -31,13 +49,13 @@ const ChefPage: FC = () => {
               .then((response) => setMessage(response.message))
               .catch((err) => {
                 if (isAxiosError(err)) setMessage(err.response?.data.message);
-                else setMessage(error?.message);
+                else setMessage(err?.message);
               });
           }}
         />
         {message && (
-          <Alert sx={Styles.alert} severity={isError ? "error" : "success"}>
-            <AlertTitle>{isError ? "Error" : "Success"}</AlertTitle>
+          <Alert sx={Styles.alert} severity={alert.severity}>
+            <AlertTitle>{alert.title}</AlertTitle>
             {message}
           </Alert>
         )}

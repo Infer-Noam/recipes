@@ -26,6 +26,16 @@ import { useNavigate } from "react-router-dom";
 import type { DraftRecipeIngredient } from "./recipeIngredientTable/draftRecipeIngredient.type";
 import type { SaveRecipeRes } from "@shared/http-types/recipe/saveRecipe.http-type";
 import type { MutateOptions } from "@tanstack/react-query";
+import { Controller, useForm, type SubmitHandler } from "react-hook-form";
+
+export type RecipeInputs = {
+  name: string;
+  steps: string[];
+  chef: ChefModel;
+  recipeIngredients: DraftRecipeIngredient[];
+  description: string;
+  imageUrl: string;
+};
 
 type RecipeProps = {
   recipe: RecipeModel;
@@ -59,171 +69,196 @@ export const Recipe: FC<RecipeProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  const [name, setName] = useState(initialName);
-  const [chef, setChef] = useState(initialChef);
-  const [description, setDescription] = useState(initialDescription);
-  const [imageUrl, setImageUrl] = useState(initialImageUrl);
-  const [steps, setSteps] = useState(initialSteps);
-  const [recipeIngredients, setRecipeIngredients] =
-    useState<DraftRecipeIngredient[]>(initialIngredients);
+  const {
+    register,
+    handleSubmit,
+    watch,
+    control,
+    formState: { errors },
+  } = useForm<RecipeInputs>({
+    defaultValues: {
+      name: initialName,
+      chef: initialChef,
+      description: initialDescription,
+      imageUrl: initialImageUrl,
+      steps: initialSteps,
+      recipeIngredients: initialIngredients,
+    },
+  });
 
+  const { chef, imageUrl } = watch();
   const [errorText, setErrorText] = useState<string | undefined>(undefined);
 
-  const isValidRecipeIngredient = (
-    ingredient: DraftRecipeIngredient
-  ): boolean => {
-    if (typeof ingredient.amount !== "number") return false;
-    if (typeof ingredient.measurementUnit !== "string") return false;
-    if (typeof ingredient.ingredient?.uuid !== "string") return false;
-    return true;
-  };
+  const onSubmit: SubmitHandler<RecipeInputs> = async ({
+    name,
+    chef,
+    description,
+    imageUrl,
+    steps,
+    recipeIngredients,
+  }) => {
 
-  const save = async () => {
-    setErrorText(undefined);
-    const areIngredientsValid = recipeIngredients.every(
-      isValidRecipeIngredient
-    );
-    if (areIngredientsValid) {
-      const recipeDetails: RecipeDetails = {
-        uuid,
-        name,
-        chef,
-        description,
-        imageUrl,
-        steps,
-        ingredients: recipeIngredients.map((recipeIngredient) => ({
-          uuid: recipeIngredient.uuid,
-          recipe: { uuid },
-          ingredient: { uuid: recipeIngredient!.ingredient!.uuid! },
-          amount: recipeIngredient!.amount!,
-          measurementUnit: recipeIngredient!.measurementUnit!,
-        })),
-      };
+    const recipeDetails: RecipeDetails = {
+      uuid,
+      name,
+      chef,
+      description,
+      imageUrl,
+      steps,
+      ingredients: recipeIngredients.map((ri) => ({
+        uuid: ri.uuid,
+        recipe: { uuid },
+        ingredient: { uuid: ri!.ingredient!.uuid! },
+        amount: ri!.amount!,
+        measurementUnit: ri!.measurementUnit!,
+      })),
+    };
+
+    try {
       const response = await saveRecipe(recipeDetails);
-      if (response.recipe) navigate(-1);
-      else {
-        setErrorText(saveError?.message);
+      if (response.recipe) {
+        navigate(-1);
+      } else {
+        setErrorText(saveError?.message || "Failed to save recipe");
       }
-    } else {
-      setErrorText("Recipe contain invalid ingredient");
+    } catch (error) {
+      setErrorText(
+        error instanceof Error ? error.message : "An error occurred"
+      );
     }
   };
 
   return (
-    <Grid container spacing={2} sx={Styles.gridContainer}>
-      <Grid size={{ xs: 6, lg: 3.5, xl: 6 }}>
-        <TextField
-          fullWidth
-          id="outlined-basic"
-          label="Recipe name"
-          variant="outlined"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-      </Grid>
-      <Grid size={{ xs: 6, lg: 4.5, xl: 6 }}>
-        <Tooltip
-          arrow
-          placement="right"
-          title={
-            <Box component="span">
-              <Typography>{`Email: ${chef.email}`}</Typography>
-              <Typography>{`Phone number: ${chef.phone}`}</Typography>
-            </Box>
-          }
-        >
-          <Autocomplete
-            options={chefs}
-            getOptionLabel={(option) =>
-              `${option.firstName} ${option.lastName}`
-            }
-            value={chef || null}
-            onChange={(_, newValue: ChefModel | null) => {
-              if (newValue) {
-                setChef(newValue);
-              }
-            }}
-            renderInput={(params) => <TextField {...params} label="Chef" />}
-            isOptionEqualToValue={(option, value) => option.uuid === value.uuid}
+    <Box component="form" onSubmit={handleSubmit(onSubmit)}>
+      <Grid container spacing={2} sx={Styles.gridContainer}>
+        <Grid size={{ xs: 6, lg: 3.5, xl: 6 }}>
+          <TextField
+            fullWidth
+            id="outlined-basic"
+            label="Recipe name"
+            variant="outlined"
+            {...register("name", { required: true, maxLength: 20 })}
+            error={!!errors.name}
+            helperText={errors.name && "Recipe name is required"}
           />
-        </Tooltip>
-      </Grid>
-      <Grid size={{ xs: 12, lg: 8, xl: 6 }}>
-        <TextField
-          fullWidth
-          multiline
-          id="outlined-basic"
-          label="Short description"
-          variant="outlined"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-      </Grid>
-
-      <Grid size={{ xs: 12, lg: 8, xl: 6 }}>
-        <TextField
-          fullWidth
-          id="outlined-basic"
-          label="Image url"
-          variant="outlined"
-          value={imageUrl}
-          onChange={(e) => setImageUrl(e.target.value)}
-          slotProps={{
-            input: {
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label={"Open image"}
-                    onClick={() => window.open(imageUrl)}
-                    edge="end"
-                  >
-                    <OpenInNewIcon />
-                  </IconButton>
-                </InputAdornment>
-              ),
-            },
-          }}
-        />
-      </Grid>
-      <Grid size={{ xs: 12, lg: 8, xl: 6 }}>
-        <RecipeStepsList steps={steps} setSteps={setSteps} />
-      </Grid>
-      <Grid size={{ xs: 12, lg: 8, xl: 6 }}>
-        <RecipeIngredientsTable
-          recipeIngredients={recipeIngredients}
-          ingredients={ingredients}
-          setRecipeIngredients={setRecipeIngredients}
-        />
-      </Grid>
-
-      <Grid size={{ xs: 4, md: 3, lg: 4.1, xl: 3 }}>
-        <Button fullWidth variant="outlined" size="large" onClick={save}>
-          Save
-        </Button>
-      </Grid>
-
-      <Grid size={{ xs: 4, md: 3, lg: 4.1, xl: 3 }}>
-        <Button
-          fullWidth
-          variant="outlined"
-          size="large"
-          onClick={() => {
-            deleteRecipe();
-            navigate(-1);
-          }}
-        >
-          Delete
-        </Button>
-      </Grid>
-
-      {errorText && (
-        <Grid size={{ xs: 8, md: 6.5, lg: 4, xl: 6.5 }}>
-          <Alert severity="error">
-            <AlertTitle>Error</AlertTitle>
-            {errorText}
-          </Alert>
         </Grid>
-      )}
-    </Grid>
+        <Grid size={{ xs: 6, lg: 4.5, xl: 6 }}>
+          <Controller
+            name="chef"
+            control={control}
+            rules={{ required: true }}
+            render={({ field: { onChange, value } }) => (
+              <Tooltip
+                arrow
+                placement="right"
+                title={
+                  <Box component="span">
+                    <Typography>{`Email: ${chef?.email || ""}`}</Typography>
+                    <Typography>{`Phone number: ${
+                      chef?.phone || ""
+                    }`}</Typography>
+                  </Box>
+                }
+              >
+                <Autocomplete
+                  options={chefs}
+                  getOptionLabel={(option) =>
+                    `${option.firstName} ${option.lastName}`
+                  }
+                  value={value || null}
+                  onChange={(_, newValue) => onChange(newValue)}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Chef"
+                      error={!!errors.chef}
+                      helperText={errors.chef && "Chef is required"}
+                    />
+                  )}
+                  isOptionEqualToValue={(option, value) =>
+                    option.uuid === value.uuid
+                  }
+                />
+              </Tooltip>
+            )}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, lg: 8, xl: 6 }}>
+          <TextField
+            fullWidth
+            multiline
+            id="outlined-basic"
+            label="Short description"
+            variant="outlined"
+            {...register("description", { required: false })}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, lg: 8, xl: 6 }}>
+          <TextField
+            fullWidth
+            id="outlined-basic"
+            label="Image url"
+            variant="outlined"
+            {...register("imageUrl", {
+              required: true,
+              pattern: /https?:\/\/[^\/\s]+\/[^\/\s]/i,
+            })}
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label={"Open image"}
+                      onClick={() => window.open(imageUrl)}
+                      edge="end"
+                    >
+                      <OpenInNewIcon />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
+            error={!!errors.imageUrl}
+            helperText={errors.imageUrl && "Valid image URL is required"}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, lg: 8, xl: 6 }}>
+          <RecipeStepsList control={control} />
+        </Grid>
+        <Grid size={{ xs: 12, lg: 8, xl: 6 }}>
+          <RecipeIngredientsTable ingredients={ingredients} control={control} />
+        </Grid>
+
+        <Grid size={{ xs: 4, md: 3, lg: 4.1, xl: 3 }}>
+          <Button fullWidth variant="outlined" size="large" type="submit">
+            Save
+          </Button>
+        </Grid>
+
+        <Grid size={{ xs: 4, md: 3, lg: 4.1, xl: 3 }}>
+          <Button
+            fullWidth
+            variant="outlined"
+            size="large"
+            onClick={() => {
+              deleteRecipe();
+              navigate(-1);
+            }}
+          >
+            Delete
+          </Button>
+        </Grid>
+
+        {errorText && (
+          <Grid size={{ xs: 8, md: 6.5, lg: 4, xl: 6.5 }}>
+            <Alert severity="error">
+              <AlertTitle>Error</AlertTitle>
+              {errorText}
+            </Alert>
+          </Grid>
+        )}
+      </Grid>
+    </Box>
   );
 };

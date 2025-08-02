@@ -5,6 +5,14 @@ const container: SxProps = {
   overflow: "auto",
 };
 
+const centerAlign: SxProps = {
+  textAlign: "center",
+};
+
+const labelTypography = { fontWeight: "bold" };
+
 export default {
   container,
+  centerAlign,
+  labelTypography,
 };

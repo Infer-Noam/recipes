@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import ChefTableRow from "./chefTableRow/chefTableRow";
 import AddIcon from "@mui/icons-material/Add";
-import { v4 as uuidv4 } from "uuid";
+import defaultChefDetails from "../../consts/defaultChefDetails";
 import CustomTableCell from "../customTableCell/CustomTableCell";
 
 type ChefTableProps = {
@@ -55,17 +55,10 @@ const ChefTable: FC<ChefTableProps> = ({
             />
           ))}
           <TableRow>
-            <TableCell align="center">
+            <TableCell sx={Styles.centerAlign}>
               <Button
                 onClick={() => {
-                  const newChef: ChefDetails = {
-                    uuid: uuidv4(),
-                    firstName: "",
-                    lastName: "",
-                    email: "",
-                    phone: "",
-                  };
-                  setChefs((prev) => [...prev, newChef]);
+                  setChefs((prev) => [...prev, defaultChefDetails]);
                 }}
                 startIcon={<AddIcon />}
               >

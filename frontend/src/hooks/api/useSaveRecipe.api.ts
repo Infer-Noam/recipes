@@ -8,15 +8,17 @@ import type { RecipeDetails } from "../../../../shared/types/recipe.type";
 import { USE_GET_RECIPES_KEY } from "./useGetRecipes.api";
 import { USE_GET_RECIPE_BY_UUID_KEY } from "./useGetRecipeByUuid.api";
 
+const mutationFn = async (recipeDetails: RecipeDetails) => {
+  const data: SaveRecipeReq = { recipeDetails };
+  const response = await api.post<SaveRecipeRes>("/recipe", data);
+  return response.data;
+};
+
 export const useSaveRecipe = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (recipeDetails: RecipeDetails) => {
-      const data: SaveRecipeReq = { recipeDetails };
-      const response = await api.post<SaveRecipeRes>("/recipe", data);
-      return response.data;
-    },
+    mutationFn,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [USE_GET_RECIPES_KEY] });
       queryClient.invalidateQueries({ queryKey: [USE_GET_RECIPE_BY_UUID_KEY] });

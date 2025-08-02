@@ -12,10 +12,15 @@ const emailTextField: SxProps = { width: "230px" };
 
 const phoneTextField: SxProps = { width: "120px" };
 
+const centerAlign: SxProps = {
+  textAlign: "center",
+};
+
 export default {
   chefTableRow,
   firstNameTextField,
   lastNameTextField,
   emailTextField,
   phoneTextField,
+  centerAlign,
 };
