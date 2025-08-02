@@ -3,14 +3,14 @@ import { useGetRecipeByUuid } from "../../hooks/api/useGetRecipeByUuid.api";
 import { useGetIngredients } from "../../hooks/api/useGetIngredients.api";
 import { useGetChefs } from "../../hooks/api/useGetChefs.api";
 import { Recipe } from "../../components/recipe/recipe";
-import type { FC } from "react";
 import BackdropLoading from "../../components/backdropLoading/BackdropLoading";
 import CentralErrorAlert from "../../components/centralErrorAlert/CentralErrorAlert";
+import { Box } from "@mui/material";
 
-const RecipePage: FC = () => {
+const RecipePage = () => {
   const { uuid } = useParams();
 
-  if (!uuid) return null;
+  if (!uuid) return <CentralErrorAlert text="Recipe identifier missing" />;
 
   const { data: recipe, isLoading } = useGetRecipeByUuid(uuid);
   const { data: ingredients = [] } = useGetIngredients();
@@ -19,29 +19,15 @@ const RecipePage: FC = () => {
   if (isLoading) return <BackdropLoading />;
 
   if (recipe) {
-    const {
-      name,
-      chef,
-      description,
-      imageUrl,
-      steps,
-      ingredients: recipeIngredients,
-    } = recipe;
-
     return (
-      <Recipe
-        chefs={chefs}
-        uuid={uuid}
-        ingredients={ingredients}
-        initialRecipe={{
-          name,
-          chef,
-          description,
-          imageUrl,
-          steps,
-          recipeIngredients,
-        }}
-      ></Recipe>
+      <Box>
+        <Recipe
+          uuid={uuid}
+          initialRecipe={recipe}
+          chefs={chefs}
+          ingredients={ingredients}
+        ></Recipe>
+      </Box>
     );
   }
 

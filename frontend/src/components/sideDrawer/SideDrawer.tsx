@@ -1,6 +1,6 @@
 import { type FC } from "react";
 import { Drawer, IconButton, Toolbar, Divider, Box } from "@mui/material";
-import { DrawerList } from "./drawerList/drawerList";
+import { DrawerList } from "./drawerList/DrawerList";
 import Styles from "./sideDrawer.style";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 
